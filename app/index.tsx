@@ -1,13 +1,21 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TodoListItem } from '@/components/TodoListItem';
 import type { Group, Todo } from '@/db/schema';
+import { PRIORITIES, PRIORITY_COLORS, PRIORITY_SECTION_TITLES } from '@/lib/priority';
 import { useTheme } from '@/lib/theme';
 import { useDataStore } from '@/store/dataStore';
 import { useUiStore, type GroupFilter } from '@/store/uiStore';
+
+interface PrioritySection {
+  key: string;
+  title: string;
+  color: string;
+  data: Todo[];
+}
 
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -25,15 +33,21 @@ export default function HomeScreen(): React.JSX.Element {
 
   const groupById = useMemo(() => new Map(groups.map((g) => [g.id, g])), [groups]);
 
-  const visible = useMemo(() => {
-    return todos
+  const sections = useMemo<PrioritySection[]>(() => {
+    const filtered = todos
       .filter((t) => (showCompleted ? true : !t.isDone))
       .filter((t) => {
         if (groupFilter === 'all') return true;
         if (groupFilter === null) return t.groupId == null;
         return t.groupId === groupFilter;
-      })
-      .sort(sortTodos);
+      });
+
+    return PRIORITIES.map((p) => ({
+      key: p,
+      title: PRIORITY_SECTION_TITLES[p],
+      color: PRIORITY_COLORS[p],
+      data: filtered.filter((t) => t.priority === p).sort(sortTodos),
+    })).filter((s) => s.data.length > 0);
   }, [todos, groupFilter, showCompleted]);
 
   return (
@@ -46,10 +60,17 @@ export default function HomeScreen(): React.JSX.Element {
         onToggleCompleted={toggleShowCompleted}
       />
 
-      <FlatList
-        data={visible}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionDot, { backgroundColor: section.color }]} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.title}</Text>
+          </View>
+        )}
         renderItem={({ item }) => (
           <TodoListItem
             todo={item}
@@ -150,13 +171,13 @@ function EmptyState(): React.JSX.Element {
     <View style={styles.empty}>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>Nothing here yet</Text>
       <Text style={{ color: theme.textMuted, textAlign: 'center' }}>
-        Tap “＋ New” to add your first todo.
+        {'Tap "＋ New" to add your first todo.'}
       </Text>
     </View>
   );
 }
 
-/** Done last; within a group, due items first (soonest first), then by creation. */
+/** Done last; within a priority group, due items first (soonest first), then by creation. */
 function sortTodos(a: Todo, b: Todo): number {
   if (a.isDone !== b.isDone) return a.isDone ? 1 : -1;
   if (a.dueAt != null && b.dueAt != null) return a.dueAt - b.dueAt;
@@ -180,6 +201,15 @@ const styles = StyleSheet.create({
   chipDot: { width: 8, height: 8, borderRadius: 4 },
   completedToggle: { paddingHorizontal: 14, paddingBottom: 10 },
   list: { padding: 12, flexGrow: 1 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  sectionDot: { width: 10, height: 10, borderRadius: 5 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 80 },
   emptyTitle: { fontSize: 18, fontWeight: '600' },
   footer: {

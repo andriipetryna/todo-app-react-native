@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { Group, Todo } from '@/db/schema';
+import type { Group, Priority, Todo } from '@/db/schema';
 import { formatDueDateTime, isOverdue, relativeDueLabel } from '@/lib/date';
+import { PRIORITY_COLORS } from '@/lib/priority';
 import { useTheme } from '@/lib/theme';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 export function TodoListItem({ todo, group, onToggle, onPress }: Props): React.JSX.Element {
   const theme = useTheme();
   const overdue = !todo.isDone && isOverdue(todo.dueAt);
+  const priorityColor = PRIORITY_COLORS[todo.priority as Priority] ?? PRIORITY_COLORS.moderate;
 
   return (
     <Pressable
@@ -24,6 +26,7 @@ export function TodoListItem({ todo, group, onToggle, onPress }: Props): React.J
       accessibilityRole="button"
       accessibilityLabel={`Edit todo ${todo.title}`}
     >
+      <View style={[styles.priorityStripe, { backgroundColor: priorityColor }]} />
       <Pressable
         hitSlop={10}
         onPress={() => onToggle(todo)}
@@ -86,6 +89,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 8,
     gap: 12,
+    overflow: 'hidden',
+  },
+  priorityStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   checkbox: {
     width: 24,

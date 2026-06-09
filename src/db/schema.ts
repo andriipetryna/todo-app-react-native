@@ -19,6 +19,8 @@ export const groups = sqliteTable('groups', {
     .default(sql`(unixepoch() * 1000)`),
 });
 
+export type Priority = 'top' | 'high' | 'moderate' | 'low';
+
 export const todos = sqliteTable('todos', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   /** Nullable FK -> groups.id. A todo has zero or one group. */
@@ -33,6 +35,7 @@ export const todos = sqliteTable('todos', {
   notificationId: text('notification_id'),
   isDone: integer('is_done', { mode: 'boolean' }).notNull().default(false),
   completedAt: integer('completed_at'),
+  priority: text('priority').notNull().default('moderate'),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: integer('created_at')
     .notNull()

@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 
 import { DateTimeField } from '@/components/DateTimeField';
+import type { Priority } from '@/db/schema';
+import { PRIORITIES, PRIORITY_COLORS, PRIORITY_LABELS } from '@/lib/priority';
 import { useTheme } from '@/lib/theme';
 import { useDataStore } from '@/store/dataStore';
 
@@ -38,6 +40,9 @@ export default function TodoEditScreen(): React.JSX.Element {
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [groupId, setGroupId] = useState<number | null>(existing?.groupId ?? null);
   const [dueAt, setDueAt] = useState<number | null>(existing?.dueAt ?? null);
+  const [priority, setPriority] = useState<Priority>(
+    (existing?.priority as Priority | undefined) ?? 'moderate',
+  );
   const [leadText, setLeadText] = useState<string>(
     existing?.notificationLeadMinutes != null ? String(existing.notificationLeadMinutes) : '',
   );
@@ -55,6 +60,7 @@ export default function TodoEditScreen(): React.JSX.Element {
       notes: notes.trim() ? notes.trim() : null,
       groupId,
       dueAt,
+      priority,
       notificationLeadMinutes: leadMinutes,
     };
     try {
@@ -121,6 +127,18 @@ export default function TodoEditScreen(): React.JSX.Element {
               color={g.color}
               active={groupId === g.id}
               onPress={() => setGroupId(g.id)}
+            />
+          ))}
+        </View>
+
+        <Label text="Priority" />
+        <View style={styles.groupRow}>
+          {PRIORITIES.map((p) => (
+            <PriorityChip
+              key={p}
+              priority={p}
+              active={priority === p}
+              onPress={() => setPriority(p)}
             />
           ))}
         </View>
@@ -201,6 +219,36 @@ function GroupChip({
     >
       {color ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
       <Text style={{ color: active ? theme.primaryText : theme.text, fontSize: 13 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function PriorityChip({
+  priority,
+  active,
+  onPress,
+}: {
+  priority: Priority;
+  active: boolean;
+  onPress: () => void;
+}): React.JSX.Element {
+  const theme = useTheme();
+  const color = PRIORITY_COLORS[priority];
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.chip,
+        {
+          borderColor: active ? color : theme.border,
+          backgroundColor: active ? color : theme.card,
+        },
+      ]}
+    >
+      <View style={[styles.chipDot, { backgroundColor: active ? '#fff' : color }]} />
+      <Text style={{ color: active ? '#fff' : theme.text, fontSize: 13 }}>
+        {PRIORITY_LABELS[priority]}
+      </Text>
     </Pressable>
   );
 }

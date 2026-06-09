@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, isNotNull, isNull, type SQL } from 'drizzle-orm';
 
-import { todos, type Todo } from '../schema';
+import { todos, type Priority, type Todo } from '../schema';
 import type { DrizzleDb } from '../types';
 
 export interface CreateTodoInput {
@@ -9,11 +9,15 @@ export interface CreateTodoInput {
   groupId?: number | null;
   dueAt?: number | null;
   notificationLeadMinutes?: number | null;
+  priority?: Priority;
   sortOrder?: number;
 }
 
 export type UpdateTodoInput = Partial<
-  Pick<Todo, 'title' | 'notes' | 'groupId' | 'dueAt' | 'notificationLeadMinutes' | 'sortOrder'>
+  Pick<
+    Todo,
+    'title' | 'notes' | 'groupId' | 'dueAt' | 'notificationLeadMinutes' | 'priority' | 'sortOrder'
+  >
 >;
 
 export interface ListTodosOptions {
@@ -96,6 +100,7 @@ export function createTodosRepository(db: DrizzleDb): TodosRepository {
           groupId: input.groupId ?? null,
           dueAt: input.dueAt ?? null,
           notificationLeadMinutes: input.notificationLeadMinutes ?? null,
+          priority: input.priority ?? 'moderate',
           sortOrder: input.sortOrder ?? 0,
         })
         .returning()
