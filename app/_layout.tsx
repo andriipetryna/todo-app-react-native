@@ -43,7 +43,7 @@ export default function RootLayout(): React.JSX.Element | null {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: true }}>
-          <Stack.Screen name="index" options={{ title: 'TODO' }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="todo/[id]" options={{ title: 'Edit', presentation: 'modal' }} />
           <Stack.Screen name="groups" options={{ title: 'Groups', presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings', presentation: 'modal' }} />
