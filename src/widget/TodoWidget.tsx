@@ -4,6 +4,7 @@ import { FlexWidget, TextWidget } from 'react-native-android-widget';
 import { formatDueDateTime } from '@/lib/date';
 
 import type { WidgetSnapshot, WidgetTodoItem } from './snapshot';
+import type { WidgetSizeClass } from './sizeCache';
 
 /**
  * JSX widget UI (react-native-android-widget). Renders purely from the snapshot — no DB
@@ -52,8 +53,57 @@ function Row({ item }: { item: WidgetTodoItem }): React.JSX.Element {
   );
 }
 
-export function TodoWidget({ snapshot }: { snapshot: WidgetSnapshot }): React.JSX.Element {
-  const { items } = snapshot;
+function CompactRow({ item }: { item: WidgetTodoItem }): React.JSX.Element {
+  return (
+    <FlexWidget
+      clickAction="OPEN_URI"
+      clickActionData={{ uri: itemUri(item.id) }}
+      style={{
+        flexDirection: 'column',
+        width: 'match_parent',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        marginBottom: 2,
+        borderRadius: 6,
+        backgroundColor: '#ffffff',
+      }}
+    >
+      <TextWidget
+        text={item.title}
+        maxLines={1}
+        style={{ fontSize: 13, fontWeight: '600', color: '#0b1117' }}
+      />
+    </FlexWidget>
+  );
+}
+
+function SmallWidget({ items }: { items: WidgetTodoItem[] }): React.JSX.Element {
+  return (
+    <FlexWidget
+      clickAction="OPEN_URI"
+      clickActionData={{ uri: OPEN_APP_URI }}
+      style={{
+        height: 'match_parent',
+        width: 'match_parent',
+        flexDirection: 'column',
+        backgroundColor: '#e6f4fe',
+        borderRadius: 16,
+        padding: 8,
+      }}
+    >
+      {items.length === 0 ? (
+        <TextWidget
+          text="No upcoming todos"
+          style={{ fontSize: 11, color: '#57606a', paddingVertical: 4 }}
+        />
+      ) : (
+        items.map((item) => <CompactRow key={item.id} item={item} />)
+      )}
+    </FlexWidget>
+  );
+}
+
+function StandardWidget({ items }: { items: WidgetTodoItem[] }): React.JSX.Element {
   return (
     <FlexWidget
       clickAction="OPEN_URI"
@@ -94,4 +144,17 @@ export function TodoWidget({ snapshot }: { snapshot: WidgetSnapshot }): React.JS
       )}
     </FlexWidget>
   );
+}
+
+interface TodoWidgetProps {
+  snapshot: WidgetSnapshot;
+  sizeClass: WidgetSizeClass;
+}
+
+export function TodoWidget({ snapshot, sizeClass }: TodoWidgetProps): React.JSX.Element {
+  const { items } = snapshot;
+  if (sizeClass === 'small') {
+    return <SmallWidget items={items} />;
+  }
+  return <StandardWidget items={items} />;
 }

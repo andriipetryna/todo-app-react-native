@@ -67,6 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             description: 'Shows your upcoming todos',
             previewImage: './assets/icon.png',
             updatePeriodMillis: 1800000,
+            resizeMode: 'horizontal|vertical',
           },
         ],
       },

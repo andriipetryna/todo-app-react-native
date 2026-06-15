@@ -3,6 +3,7 @@ import { Linking } from 'react-native';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 
 import { readWidgetSnapshot } from './snapshot';
+import { classifySize, deleteWidgetSize, maxItemsForSizeClass, writeWidgetSize } from './sizeCache';
 import { TodoWidget } from './TodoWidget';
 
 /**
@@ -17,8 +18,19 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
     case 'WIDGET_ADDED':
     case 'WIDGET_UPDATE':
     case 'WIDGET_RESIZED': {
+      const { widgetId, width, height } = props.widgetInfo;
+      const dims = { widthDp: width, heightDp: height };
+      await writeWidgetSize(widgetId, dims);
+
+      const sizeClass = classifySize(dims);
       const snapshot = await readWidgetSnapshot();
-      props.renderWidget(<TodoWidget snapshot={snapshot} />);
+      const items = snapshot.items.slice(0, maxItemsForSizeClass(sizeClass));
+
+      props.renderWidget(<TodoWidget snapshot={{ ...snapshot, items }} sizeClass={sizeClass} />);
+      break;
+    }
+    case 'WIDGET_DELETED': {
+      await deleteWidgetSize(props.widgetInfo.widgetId);
       break;
     }
     case 'WIDGET_CLICK': {

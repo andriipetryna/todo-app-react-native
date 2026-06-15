@@ -10,7 +10,7 @@ import { groupsRepository, todosRepository } from '@/db/repositories';
  */
 
 export const WIDGET_SNAPSHOT_KEY = 'widget:snapshot:v1';
-const MAX_ITEMS = 5;
+export const SNAPSHOT_MAX_ITEMS = 10;
 
 export interface WidgetTodoItem {
   id: number;
@@ -29,7 +29,7 @@ export interface WidgetSnapshot {
 export function buildWidgetSnapshot(now: number = Date.now()): WidgetSnapshot {
   const groups = groupsRepository.list();
   const groupById = new Map(groups.map((g) => [g.id, g]));
-  const upcoming = todosRepository.listUpcoming({ now, limit: MAX_ITEMS });
+  const upcoming = todosRepository.listUpcoming({ now, limit: SNAPSHOT_MAX_ITEMS });
 
   return {
     updatedAt: now,

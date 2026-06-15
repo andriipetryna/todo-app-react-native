@@ -17,7 +17,7 @@ export async function refreshWidget(now: number = Date.now()): Promise<void> {
 
   await requestWidgetUpdate({
     widgetName: 'Todo',
-    renderWidget: () => <TodoWidget snapshot={snapshot} />,
+    renderWidget: () => <TodoWidget snapshot={snapshot} sizeClass="medium" />,
     widgetNotFound: () => {
       // No widget instance on the home screen yet — nothing to update.
     },
