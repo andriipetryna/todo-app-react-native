@@ -7,6 +7,17 @@ structured so iOS can be added later (see `PLAN.md` Phase 6).
 Built with Expo (managed workflow), expo-router, expo-sqlite + Drizzle ORM, Zustand,
 expo-notifications, and react-native-android-widget.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="screenshots/Screenshot_2026-06-18-23-10-17-839_com.todoapp.local.jpg" alt="Screenshot 1" width="100%"/></td>
+    <td><img src="screenshots/Screenshot_2026-06-18-23-10-25-031_com.todoapp.local.jpg" alt="Screenshot 2" width="100%"/></td>
+    <td><img src="screenshots/Screenshot_2026-06-18-23-10-37-651_com.todoapp.local.jpg" alt="Screenshot 3" width="100%"/></td>
+    <td><img src="screenshots/Screenshot_2026-06-18-23-10-49-917_com.todoapp.local.jpg" alt="Screenshot 4" width="100%"/></td>
+  </tr>
+</table>
+
 ## Features
 
 - Todos with title, optional notes, optional **due date + time**, and a per-todo
