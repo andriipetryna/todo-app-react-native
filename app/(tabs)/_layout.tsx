@@ -29,7 +29,7 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Tasks',
           tabBarLabel: 'Tasks',
-          tabBarIcon: ({ focused }) => <TabIcon label="☑" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="✅" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -46,6 +46,14 @@ export default function TabsLayout(): React.JSX.Element {
           title: 'Monthly',
           tabBarLabel: 'Monthly',
           tabBarIcon: ({ focused }) => <TabIcon label="🗓" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ focused }) => <TabIcon label="⚙️" focused={focused} />,
         }}
       />
     </Tabs>

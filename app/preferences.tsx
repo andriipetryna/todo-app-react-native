@@ -6,7 +6,7 @@ import { useDataStore } from '@/store/dataStore';
 
 const PRESETS = [5, 10, 15, 30, 60, 120];
 
-export default function SettingsScreen(): React.JSX.Element {
+export default function PreferencesScreen(): React.JSX.Element {
   const theme = useTheme();
   const settings = useDataStore((s) => s.settings);
   const setDefaultLeadMinutes = useDataStore((s) => s.setDefaultLeadMinutes);

@@ -1,22 +1,42 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TodoListItem } from '@/components/TodoListItem';
 import type { Group, Todo } from '@/db/schema';
+import { PRIORITY_COLORS } from '@/lib/priority';
 import { useTheme } from '@/lib/theme';
 import { useDataStore } from '@/store/dataStore';
+import { CalendarDayTodoDots } from '@/components/CalendarDayTodoDots';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function getWeekStart(base: Date): Date {
   const d = new Date(base);
-  const day = d.getDay(); // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day; // back to Monday
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function todayMidnight(): number {
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return t.getTime();
+}
+
+function computeWeekStart(offset: number): Date {
+  const base = new Date();
+  base.setDate(base.getDate() + offset * 7);
+  return getWeekStart(base);
+}
+
+function snapToWeek(weekStartMs: number): number {
+  const today = todayMidnight();
+  return today >= weekStartMs && today < weekStartMs + 7 * DAY_MS ? today : weekStartMs;
 }
 
 function formatWeekRange(start: Date): string {
@@ -31,17 +51,18 @@ function formatWeekRange(start: Date): string {
   return `${start.getDate()} – ${end.toLocaleDateString(undefined, { ...opts, year: 'numeric' })}`;
 }
 
-function formatDayHeader(ms: number): string {
+function formatSelectedDayHeader(ms: number): string {
   return new Date(ms).toLocaleDateString(undefined, {
-    weekday: 'short',
+    weekday: 'long',
     day: 'numeric',
-    month: 'short',
+    month: 'long',
   });
 }
 
-interface DaySection {
+interface DayCell {
   dayMs: number;
-  label: string;
+  dayNum: number;
+  name: string;
   todos: Todo[];
 }
 
@@ -50,57 +71,60 @@ export default function WeeklyScreen(): React.JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [weekOffset, setWeekOffset] = useState(0);
-
   const todos = useDataStore((s) => s.todos);
   const groups = useDataStore((s) => s.groups);
   const toggleTodo = useDataStore((s) => s.toggleTodo);
-
   const groupById = useMemo(() => new Map(groups.map((g: Group) => [g.id, g])), [groups]);
 
-  const weekStart = useMemo(() => {
-    const base = new Date();
-    base.setDate(base.getDate() + weekOffset * 7);
-    return getWeekStart(base);
-  }, [weekOffset]);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedDayMs, setSelectedDayMs] = useState<number>(todayMidnight);
 
-  const weekEnd = useMemo(() => new Date(weekStart.getTime() + 7 * DAY_MS), [weekStart]);
+  const weekStart = useMemo(() => computeWeekStart(weekOffset), [weekOffset]);
 
-  const sections = useMemo<DaySection[]>(() => {
-    const weekStartMs = weekStart.getTime();
-    const weekEndMs = weekEnd.getTime();
+  function navigateWeek(delta: number): void {
+    const newOffset = weekOffset + delta;
+    setWeekOffset(newOffset);
+    setSelectedDayMs(snapToWeek(computeWeekStart(newOffset).getTime()));
+  }
 
-    const inWeek = todos.filter(
-      (t: Todo) => t.dueAt != null && t.dueAt >= weekStartMs && t.dueAt < weekEndMs,
-    );
+  function goToday(): void {
+    setWeekOffset(0);
+    setSelectedDayMs(todayMidnight());
+  }
 
-    const byDay = new Map<number, Todo[]>();
-    for (const t of inWeek) {
-      const d = new Date(t.dueAt!);
+  const dayCells = useMemo<DayCell[]>(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
       d.setHours(0, 0, 0, 0);
       const dayMs = d.getTime();
-      const existing = byDay.get(dayMs);
-      if (existing) {
-        existing.push(t);
-      } else {
-        byDay.set(dayMs, [t]);
-      }
-    }
-
-    return Array.from(byDay.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([dayMs, dayTodos]) => ({
+      const dayEnd = dayMs + DAY_MS;
+      return {
         dayMs,
-        label: formatDayHeader(dayMs),
-        todos: dayTodos.slice().sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0)),
-      }));
-  }, [todos, weekStart, weekEnd]);
+        dayNum: new Date(dayMs).getDate(),
+        name: DAY_NAMES[i] ?? '',
+        todos: todos
+          .filter((t: Todo) => t.dueAt != null && t.dueAt >= dayMs && t.dueAt < dayEnd)
+          .sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0)),
+      };
+    });
+  }, [weekStart, todos]);
+
+  const selectedTodos = useMemo(
+    () => dayCells.find((c) => c.dayMs === selectedDayMs)?.todos ?? [],
+    [dayCells, selectedDayMs],
+  );
+
+  const today = todayMidnight();
+
+  const setSelectedDay = (dayMs: number): void => {};
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Week navigation */}
       <View style={[styles.navRow, { borderBottomColor: theme.border }]}>
         <Pressable
-          onPress={() => setWeekOffset((o) => o - 1)}
+          onPress={() => navigateWeek(-1)}
           style={styles.navBtn}
           hitSlop={10}
           accessibilityLabel="Previous week"
@@ -109,7 +133,7 @@ export default function WeeklyScreen(): React.JSX.Element {
         </Pressable>
         <Text style={[styles.navTitle, { color: theme.text }]}>{formatWeekRange(weekStart)}</Text>
         <Pressable
-          onPress={() => setWeekOffset((o) => o + 1)}
+          onPress={() => navigateWeek(1)}
           style={styles.navBtn}
           hitSlop={10}
           accessibilityLabel="Next week"
@@ -118,37 +142,92 @@ export default function WeeklyScreen(): React.JSX.Element {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 12 }]}>
-        {sections.length === 0 ? (
+      {/* 7-day strip */}
+      <View
+        style={[styles.strip, { backgroundColor: theme.card, borderBottomColor: theme.border }]}
+      >
+        {dayCells.map((cell) => {
+          const isToday = cell.dayMs === today;
+          const isSelected = cell.dayMs === selectedDayMs;
+          return (
+            <Pressable
+              key={cell.dayMs}
+              style={[
+                styles.dayCell,
+                isSelected && { backgroundColor: theme.primary + '18', borderRadius: 12 },
+              ]}
+              onPress={() => setSelectedDayMs(cell.dayMs)}
+              accessibilityRole="button"
+              accessibilityLabel={`${cell.name} ${cell.dayNum}`}
+            >
+              <Text
+                style={[styles.dayName, { color: isSelected ? theme.primary : theme.textMuted }]}
+              >
+                {cell.name}
+              </Text>
+              <View
+                style={[
+                  styles.dayNumCircle,
+                  isSelected && {
+                    backgroundColor: theme.primary,
+                    borderRadius: 17,
+                  },
+                  isToday && !isSelected && { borderWidth: 1.5, borderColor: theme.primary },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dayNum,
+                    {
+                      color: isSelected ? theme.primaryText : isToday ? theme.primary : theme.text,
+                      zIndex: 50,
+                    },
+                  ]}
+                >
+                  {cell.dayNum}
+                </Text>
+              </View>
+              <CalendarDayTodoDots todos={cell.todos} />
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Selected day label */}
+      <View style={[styles.dayLabelRow, { borderBottomColor: theme.border }]}>
+        <Text style={[styles.dayLabel, { color: theme.text }]}>
+          {formatSelectedDayHeader(selectedDayMs)}
+        </Text>
+      </View>
+
+      {/* Todos for selected day — fills all remaining space */}
+      <FlatList
+        data={selectedTodos}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 8 }]}
+        renderItem={({ item }) => (
+          <TodoListItem
+            todo={item}
+            group={item.groupId != null ? groupById.get(item.groupId) : undefined}
+            onToggle={(t) => void toggleTodo(t.id, !t.isDone)}
+            onPress={(t) => router.push(`/todo/${t.id}`)}
+          />
+        )}
+        ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>No tasks this week</Text>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No tasks</Text>
             <Text style={{ color: theme.textMuted, textAlign: 'center' }}>
-              Todos with a due date in this week will appear here.
+              No todos due on this day.
             </Text>
           </View>
-        ) : (
-          sections.map((section) => (
-            <View key={section.dayMs}>
-              <Text style={[styles.dayHeader, { color: theme.textMuted }]}>{section.label}</Text>
-              {section.todos.map((todo) => (
-                <TodoListItem
-                  key={todo.id}
-                  todo={todo}
-                  group={todo.groupId != null ? groupById.get(todo.groupId) : undefined}
-                  onToggle={(t) => void toggleTodo(t.id, !t.isDone)}
-                  onPress={(t) => router.push(`/todo/${t.id}`)}
-                />
-              ))}
-            </View>
-          ))
-        )}
-      </ScrollView>
+        }
+      />
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Pressable
-          onPress={() => setWeekOffset(0)}
-          style={[styles.todayBtn, { borderColor: theme.border }]}
-        >
+      {/* Footer */}
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + 12, borderTopColor: theme.border }]}
+      >
+        <Pressable onPress={goToday} style={[styles.todayBtn, { borderColor: theme.border }]}>
           <Text style={{ color: theme.text }}>Today</Text>
         </Pressable>
         <Pressable
@@ -177,23 +256,41 @@ const styles = StyleSheet.create({
   navBtn: { paddingHorizontal: 8 },
   navArrow: { fontSize: 28, fontWeight: '300' },
   navTitle: { fontSize: 15, fontWeight: '600' },
-  list: { padding: 12, flexGrow: 1 },
-  dayHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-    marginTop: 12,
+  strip: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 80 },
-  emptyTitle: { fontSize: 18, fontWeight: '600' },
+  dayCell: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  dayName: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
+  dayNumCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayNum: { fontSize: 15, fontWeight: '600' },
+  dayLabelRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  dayLabel: { fontSize: 14, fontWeight: '600' },
+  list: { padding: 12, flexGrow: 1 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 60 },
+  emptyTitle: { fontSize: 16, fontWeight: '600' },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 12,
     paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   todayBtn: {
     paddingHorizontal: 14,

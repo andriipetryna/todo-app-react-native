@@ -65,6 +65,7 @@ export default function HomeScreen(): React.JSX.Element {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled={false}
+        style={{ paddingBottom: 100 }}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionDot, { backgroundColor: section.color }]} />
@@ -82,28 +83,14 @@ export default function HomeScreen(): React.JSX.Element {
         ListEmptyComponent={<EmptyState />}
       />
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Pressable
-          onPress={() => router.push('/groups')}
-          style={[styles.secondaryBtn, { borderColor: theme.border }]}
-        >
-          <Text style={{ color: theme.text }}>Groups</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/settings')}
-          style={[styles.secondaryBtn, { borderColor: theme.border }]}
-        >
-          <Text style={{ color: theme.text }}>Settings</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/todo/new')}
-          style={[styles.fab, { backgroundColor: theme.primary }]}
-          accessibilityRole="button"
-          accessibilityLabel="Add todo"
-        >
-          <Text style={[styles.fabText, { color: theme.primaryText }]}>＋ New</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        onPress={() => router.push('/todo/new')}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
+        accessibilityRole="button"
+        accessibilityLabel="Add todo"
+      >
+        <Text style={[styles.fabText, { color: theme.primaryText }]}>＋</Text>
+      </Pressable>
     </View>
   );
 }
@@ -171,7 +158,7 @@ function EmptyState(): React.JSX.Element {
     <View style={styles.empty}>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>Nothing here yet</Text>
       <Text style={{ color: theme.textMuted, textAlign: 'center' }}>
-        {'Tap "＋ New" to add your first todo.'}
+        {'Tap "＋" to add your first todo.'}
       </Text>
     </View>
   );
@@ -226,10 +213,17 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   fab: {
-    marginLeft: 'auto',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
+    bottom: 12,
+    width: 56,
+    height: 56,
+    position: 'absolute',
+    right: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // marginLeft: 'auto',
+    // paddingHorizontal: 20,
+    // paddingVertical: 12,
+    borderRadius: '50%',
   },
-  fabText: { fontSize: 16, fontWeight: '700' },
+  fabText: { fontSize: 28, fontWeight: '700' },
 });
