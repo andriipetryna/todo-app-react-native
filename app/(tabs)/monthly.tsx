@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FloatingButton } from '@/components/FloatingButton';
 import { TodoListItem } from '@/components/TodoListItem';
 import type { Group, Todo } from '@/db/schema';
 import { useTheme } from '@/lib/theme';
@@ -229,21 +230,31 @@ export default function MonthlyScreen(): React.JSX.Element {
         }
       />
 
-      {/* Footer */}
       <View
-        style={[styles.footer, { paddingBottom: insets.bottom + 12, borderTopColor: theme.border }]}
+        style={{
+          position: 'absolute',
+          right: 16,
+          bottom: 16,
+          alignItems: 'center',
+          gap: 10,
+        }}
       >
-        <Pressable onPress={goToday} style={[styles.todayBtn, { borderColor: theme.border }]}>
-          <Text style={{ color: theme.text }}>Today</Text>
-        </Pressable>
-        <Pressable
+        <FloatingButton
+          onPress={goToday}
+          style={[styles.goTodayBtn, { borderColor: theme.primary }]}
+          accessibilityLabel="Go to today"
+        >
+          <Text style={{ color: theme.primary, fontSize: 15, fontWeight: '700' }}>
+            {new Date().getDate()}
+          </Text>
+        </FloatingButton>
+        <FloatingButton
           onPress={() => router.push('/todo/new')}
-          style={[styles.fab, { backgroundColor: theme.primary }]}
-          accessibilityRole="button"
+          style={{ position: 'relative', bottom: 0, right: 0 }}
           accessibilityLabel="Add todo"
         >
-          <Text style={[styles.fabText, { color: theme.primaryText }]}>＋ New</Text>
-        </Pressable>
+          <Text style={{ color: theme.primaryText, fontSize: 28, fontWeight: '700' }}>＋</Text>
+        </FloatingButton>
       </View>
     </View>
   );
@@ -302,25 +313,13 @@ const styles = StyleSheet.create({
   dayLabel: { fontSize: 14, fontWeight: '600' },
   list: { padding: 12, flexGrow: 1 },
   empty: { paddingTop: 40, alignItems: 'center' },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
+  goTodayBtn: {
+    position: 'relative',
+    bottom: 0,
+    right: 0,
+    width: 40,
+    height: 40,
+    borderWidth: 1.5,
+    backgroundColor: 'transparent',
   },
-  todayBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  fab: {
-    marginLeft: 'auto',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  fabText: { fontSize: 16, fontWeight: '700' },
 });

@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FloatingButton } from '@/components/FloatingButton';
 import { TodoListItem } from '@/components/TodoListItem';
 import type { Group, Todo } from '@/db/schema';
 import { PRIORITIES, PRIORITY_COLORS, PRIORITY_SECTION_TITLES } from '@/lib/priority';
@@ -20,8 +20,6 @@ interface PrioritySection {
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-
   const todos = useDataStore((s) => s.todos);
   const groups = useDataStore((s) => s.groups);
   const toggleTodo = useDataStore((s) => s.toggleTodo);
@@ -83,14 +81,9 @@ export default function HomeScreen(): React.JSX.Element {
         ListEmptyComponent={<EmptyState />}
       />
 
-      <Pressable
-        onPress={() => router.push('/todo/new')}
-        style={[styles.fab, { backgroundColor: theme.primary }]}
-        accessibilityRole="button"
-        accessibilityLabel="Add todo"
-      >
+      <FloatingButton onPress={() => router.push('/todo/new')} accessibilityLabel="Add todo">
         <Text style={[styles.fabText, { color: theme.primaryText }]}>＋</Text>
-      </Pressable>
+      </FloatingButton>
     </View>
   );
 }
@@ -199,31 +192,5 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 80 },
   emptyTitle: { fontSize: 18, fontWeight: '600' },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-  },
-  secondaryBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  fab: {
-    bottom: 12,
-    width: 56,
-    height: 56,
-    position: 'absolute',
-    right: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // marginLeft: 'auto',
-    // paddingHorizontal: 20,
-    // paddingVertical: 12,
-    borderRadius: '50%',
-  },
   fabText: { fontSize: 28, fontWeight: '700' },
 });
